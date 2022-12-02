@@ -1,0 +1,21 @@
+RANDOM=1
+RANDOM=$RANDOM
+
+for j in {1..2000}
+do
+mkdir $SLURMTMPDIR/var_${j}
+mkdir $SLURMTMPDIR/var_${j}/simResult
+for i in {1..20000}
+do
+$SLURMTMPDIR/ms 224 1 -s 1 -I 5 216 2 2 2 2 0.0 -n 1 2 -n 2 0.1 -n 3 0.1 -n 4 0.1 -n 5 0.1  \
+-ej 0.077586207 5 4 -ej 0.112068966 4 3 -ej 0.344827586 3 2 -ej 0.603448 2 1 -seeds $RANDOM $RANDOM $RANDOM | tail -n +7 >$SLURMTMPDIR/var_${j}/simResult/sim_${i}
+length=$(head -216 $SLURMTMPDIR/var_${j}/simResult/sim_${i} | awk '{sum+=$1} END {print sum}' )
+if [ ${length} -lt 2 ] || [ ${length} -eq 216 ]; then
+    rm $SLURMTMPDIR/var_${j}/simResult/sim_${i}
+fi
+done
+paste -d "," $SLURMTMPDIR/var_${j}/simResult/* > $SLURMTMPDIR/var_${j}/YRI_Poly_NoPriv_matrix
+total=$(head -1 $SLURMTMPDIR/var_${j}/YRI_Poly_NoPriv_matrix | awk -F "," '{print NF}' )
+shared=$(tail -8 $SLURMTMPDIR/var_${j}/YRI_Poly_NoPriv_matrix | awk -F "," '{for (i=1;i<=NF;i++){sums[i]+=$i;maxi=NF}}END{for(i=1;i<=maxi;i++){printf("%s\n",sums[i])}}'  | awk '{if($1>0){print $1}}' | wc -l )
+echo ${total}","${shared} >> RESULTS_1
+done
